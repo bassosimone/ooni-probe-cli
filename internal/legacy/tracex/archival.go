@@ -61,7 +61,8 @@ func NewTCPConnectList(begin time.Time, events []Event) (out []TCPConnectEntry) 
 				Failure: event.Err.ToFailure(),
 				Success: event.Err.IsNil(),
 			},
-			T: event.Time.Sub(begin).Seconds(),
+			T0: (event.Time.Sub(begin) - event.Duration).Seconds(),
+			T:  event.Time.Sub(begin).Seconds(),
 		})
 	}
 	return
@@ -107,6 +108,7 @@ func newRequestList(begin time.Time, events []Event) (out []RequestEntry) {
 		switch wrapper.(type) {
 		case *EventHTTPTransactionDone:
 			entry := RequestEntry{}
+			entry.T0 = (ev.Time.Sub(begin) - ev.Duration).Seconds()
 			entry.T = ev.Time.Sub(begin).Seconds()
 			entry.Request.Headers = model.ArchivalNewHTTPHeadersMap(ev.HTTPRequestHeaders)
 			entry.Request.HeadersList = model.ArchivalNewHTTPHeadersList(ev.HTTPRequestHeaders)
@@ -193,6 +195,7 @@ func (qtype dnsQueryType) makeQueryEntry(begin time.Time, ev *EventValue) DNSQue
 		Hostname:        ev.Hostname,
 		QueryType:       string(qtype),
 		ResolverAddress: ev.Address,
+		T0:              (ev.Time.Sub(begin) - ev.Duration).Seconds(),
 		T:               ev.Time.Sub(begin).Seconds(),
 	}
 }
@@ -208,6 +211,7 @@ func NewNetworkEventsList(begin time.Time, events []Event) (out []NetworkEvent) 
 				Failure:   ev.Err.ToFailure(),
 				Operation: wrapper.Name(),
 				Proto:     ev.Proto,
+				T0:        (ev.Time.Sub(begin) - ev.Duration).Seconds(),
 				T:         ev.Time.Sub(begin).Seconds(),
 			})
 		case *EventReadOperation:
@@ -215,6 +219,7 @@ func NewNetworkEventsList(begin time.Time, events []Event) (out []NetworkEvent) 
 				Failure:   ev.Err.ToFailure(),
 				Operation: wrapper.Name(),
 				NumBytes:  int64(ev.NumBytes),
+				T0:        (ev.Time.Sub(begin) - ev.Duration).Seconds(),
 				T:         ev.Time.Sub(begin).Seconds(),
 			})
 		case *EventWriteOperation:
@@ -222,6 +227,7 @@ func NewNetworkEventsList(begin time.Time, events []Event) (out []NetworkEvent) 
 				Failure:   ev.Err.ToFailure(),
 				Operation: wrapper.Name(),
 				NumBytes:  int64(ev.NumBytes),
+				T0:        (ev.Time.Sub(begin) - ev.Duration).Seconds(),
 				T:         ev.Time.Sub(begin).Seconds(),
 			})
 		case *EventReadFromOperation:
@@ -230,6 +236,7 @@ func NewNetworkEventsList(begin time.Time, events []Event) (out []NetworkEvent) 
 				Failure:   ev.Err.ToFailure(),
 				Operation: wrapper.Name(),
 				NumBytes:  int64(ev.NumBytes),
+				T0:        (ev.Time.Sub(begin) - ev.Duration).Seconds(),
 				T:         ev.Time.Sub(begin).Seconds(),
 			})
 		case *EventWriteToOperation:
@@ -238,12 +245,14 @@ func NewNetworkEventsList(begin time.Time, events []Event) (out []NetworkEvent) 
 				Failure:   ev.Err.ToFailure(),
 				Operation: wrapper.Name(),
 				NumBytes:  int64(ev.NumBytes),
+				T0:        (ev.Time.Sub(begin) - ev.Duration).Seconds(),
 				T:         ev.Time.Sub(begin).Seconds(),
 			})
 		default: // For example, "tls_handshake_done" (used in data analysis!)
 			out = append(out, NetworkEvent{
 				Failure:   ev.Err.ToFailure(),
 				Operation: wrapper.Name(),
+				T0:        (ev.Time.Sub(begin) - ev.Duration).Seconds(),
 				T:         ev.Time.Sub(begin).Seconds(),
 			})
 		}
@@ -268,6 +277,7 @@ func NewTLSHandshakesList(begin time.Time, events []Event) (out []TLSHandshake) 
 			NoTLSVerify:        ev.NoTLSVerify,
 			PeerCertificates:   tlsMakePeerCerts(ev.TLSPeerCerts),
 			ServerName:         ev.TLSServerName,
+			T0:                 (ev.Time.Sub(begin) - ev.Duration).Seconds(),
 			T:                  ev.Time.Sub(begin).Seconds(),
 			TLSVersion:         ev.TLSVersion,
 		})
